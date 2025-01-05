@@ -1,0 +1,40 @@
+@page "/stream/{Folder}/{File}"
+@using CbeViewer.Data
+@* @inject TimerService TimerService *@
+<h3>StreamVideo</h3>
+
+<video id="video-player" controls style="width: 100%; max-height: 800px; background-color: black;">
+    <source src="/api/video/stream/@Folder/@File" type="video/mp4" />
+    Ваш браузер не підтримує відтворення відео.
+</video>
+
+@* <p>Elapsed time: @elapsedSeconds s</p> *@
+
+@code {
+    [Parameter]
+    public string Folder { get; set; }
+    
+    [Parameter]
+    public string File { get; set; }
+
+    // private int elapsedSeconds;
+    //
+    // protected override void OnInitialized()
+    // {
+    //     base.OnInitialized();
+    //     TimerService.OnElapsed += OnTimerElapsed;
+    // }
+    //
+    // private void OnTimerElapsed()
+    // {
+    //     InvokeAsync(() =>
+    //     {
+    //         elapsedSeconds = TimerService.ElapsedSeconds;
+    //         StateHasChanged();
+    //     });
+    // }
+    // public void Dispose()
+    // {
+    //     TimerService.OnElapsed -= OnTimerElapsed;
+    // }
+}

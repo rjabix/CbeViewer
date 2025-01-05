@@ -1,0 +1,26 @@
+@page "/videos/{Folder}"
+@using CbeViewer.Data
+@inject DataRepository DataRepository
+<h3>@Folder</h3>
+
+<ul>
+    @foreach (var file in Files)
+    {
+        <li>
+            <a href="stream/@Folder/@file">@file</a>
+        </li>
+    }
+</ul>
+
+@code {
+    [Parameter]
+    public string Folder { get; set; }
+    
+    private List<string?> Files { get; set; } = [];
+    
+    protected override void OnInitialized()
+    {
+        Files = DataRepository.GetVideos(Folder);
+    }
+}
+

@@ -1,0 +1,28 @@
+﻿@page "/"
+@using CbeViewer.Data
+@inject DataRepository DataRepository
+
+<PageTitle>Home</PageTitle>
+
+<h1>Hello, world!</h1>
+
+Welcome to your new app.
+
+<ul>
+    @foreach (var dir in Folders)
+    {
+        <a href="@("videos/"+dir)">@dir</a>
+    }
+    
+</ul>
+
+@code{
+
+    private List<string> Folders { get; set; } = [];
+    
+    protected override void OnInitialized()
+    {
+        Folders = DataRepository.GetFolders();
+    }
+
+}
