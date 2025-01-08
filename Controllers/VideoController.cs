@@ -1,10 +1,14 @@
+using System.Text.Json;
 using CbeViewer.Data;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace CbeViewer.Controllers;
 [ApiController]
 [Route("api/[controller]")]
-public class VideoController(DataRepository dataRepository) : ControllerBase
+public class VideoController(DataRepository dataRepository, ApplicationDbContext context, UserManager<ApplicationUser> userManager) : ControllerBase
 {
     [HttpGet("stream/{folder}/{video}")]
     public ActionResult Stream(string folder, string video)
@@ -19,5 +23,30 @@ public class VideoController(DataRepository dataRepository) : ControllerBase
         var videoStream = System.IO.File.OpenRead(path);
         
         return File(videoStream, "video/mp4", enableRangeProcessing: true);
+    }
+    
+    [Authorize]
+    [HttpGet("initial-seconds/{folder}/{video}")]
+    public async Task<ActionResult<int>> GetInitialSeconds(string folder, string video)
+    {
+        var user = await context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.UserName == User.Identity.Name);
+        var dict = user.StartSeconds == null ? new Dictionary<string, uint>() : JsonSerializer.Deserialize<Dictionary<string, uint>>(user.StartSeconds);
+        if (!dict.ContainsKey(folder + "/" + video))
+            return Ok(0);
+        return Ok(dict[folder + "/" + video]);
+    }
+    
+    [Authorize]
+    [HttpPost("initial-seconds/{folder}/{video}")]
+    public async Task<ActionResult> SetInitialSeconds(string folder, string video, [FromQuery]double time)
+    {
+        if (time == 0) return Ok();
+        var user = await context.Users.FirstOrDefaultAsync(u => u.UserName == User.Identity.Name);
+        var dict = user.StartSeconds == null ? new Dictionary<string, uint>() : JsonSerializer.Deserialize<Dictionary<string, uint>>(user.StartSeconds);
+        dict[folder + "/" + video] = (uint)Math.Floor(time!);
+        user.StartSeconds = JsonSerializer.Serialize(dict);
+        context.SaveChangesAsync();
+        
+        return Ok();
     }
 }
