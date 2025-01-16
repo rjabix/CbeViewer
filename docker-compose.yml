@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  app:
+    image: cbeviewer:prod
+    build: 
+      context: .
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+    volumes:
+      - /home/rjabix/DockerTests/CbeViewer:/env:rw
+    ports:
+      - "8081:8080"

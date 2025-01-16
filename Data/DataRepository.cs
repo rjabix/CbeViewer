@@ -3,20 +3,20 @@ namespace CbeViewer.Data;
 public class DataRepository(ApplicationDbContext dbContext, IWebHostEnvironment environment)
 {
     private readonly string DataPath = environment.IsDevelopment() ? 
-        Directory.GetCurrentDirectory() + "/Data/" 
+        "/home/rjabix/DockerTests/CbeViewer/Videos" 
         : 
-        "/env/";
+        "/env/Videos";
     public List<string?> GetFolders()
-        => Directory.GetDirectories(DataPath + "Videos")
+        => Directory.GetDirectories(DataPath)
             .Select(Path.GetFileName)
             .ToList();
     
     public List<string?> GetVideos(string folder)
-    => Directory.GetFiles(DataPath + "Videos/" + folder)
+    => Directory.GetFiles(DataPath + "/" + folder)
         .Select(Path.GetFileName)
         .ToList();
     
     public string GetVideoPath(string folder, string video)
-        => Path.Combine(DataPath, "Videos", folder, video);
+        => $"{DataPath}/{folder}/{video}";
     
 }

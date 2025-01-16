@@ -29,7 +29,7 @@ public class VideoController(DataRepository dataRepository, ApplicationDbContext
     [HttpGet("initial-seconds/{folder}/{video}")]
     public async Task<ActionResult<int>> GetInitialSeconds(string folder, string video)
     {
-        var user = await context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.UserName == User.Identity.Name);
+        var user = await userManager.GetUserAsync(User);
         var dict = user.StartSeconds == null ? new Dictionary<string, uint>() : JsonSerializer.Deserialize<Dictionary<string, uint>>(user.StartSeconds);
         if (!dict.ContainsKey(folder + "/" + video))
             return Ok(0);
@@ -41,11 +41,11 @@ public class VideoController(DataRepository dataRepository, ApplicationDbContext
     public async Task<ActionResult> SetInitialSeconds(string folder, string video, [FromQuery]double time)
     {
         if (time == 0) return Ok();
-        var user = await context.Users.FirstOrDefaultAsync(u => u.UserName == User.Identity.Name);
+        var user = await userManager.GetUserAsync(User);
         var dict = user.StartSeconds == null ? new Dictionary<string, uint>() : JsonSerializer.Deserialize<Dictionary<string, uint>>(user.StartSeconds);
         dict[folder + "/" + video] = (uint)Math.Floor(time!);
         user.StartSeconds = JsonSerializer.Serialize(dict);
-        context.SaveChangesAsync();
+        await userManager.UpdateAsync(user);
         
         return Ok();
     }

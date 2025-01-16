@@ -24,7 +24,14 @@ builder.Services.AddAuthentication(options =>
     })
     .AddIdentityCookies();
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+Console.WriteLine(builder.Environment.IsDevelopment() ? "Starting as development" : "Starting as production");
+var connectionString = builder.Environment.IsDevelopment() ? 
+    builder.Configuration.GetConnectionString("DefaultConnection") : 
+    builder.Configuration.GetConnectionString("ProdConnection") ?? 
+    throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
+Console.WriteLine(connectionString);
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
@@ -40,6 +47,13 @@ builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSe
 //builder.Services.AddSingleton<TimerService>();
 
 var app = builder.Build();
+
+// apply migrations
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    dbContext.Database.Migrate();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
