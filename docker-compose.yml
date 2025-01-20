@@ -10,4 +10,4 @@ services:
     volumes:
       - /home/rjabix/DockerTests/CbeViewer:/env:rw
     ports:
-      - "8081:8080"
+      - "127.0.0.1:8081:8080"
