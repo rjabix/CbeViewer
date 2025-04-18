@@ -1,28 +1,43 @@
 ﻿@page "/"
 @using CbeViewer.Data
 @inject DataRepository DataRepository
+@rendermode InteractiveServer
 
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
+<h1>Welcome to CbeViewer!</h1>
 
-Welcome to your new app.
+<input placeholder="Search..." type="text" class="form-control" id="search" @bind="SearchTerm" @bind:event="oninput" @bind:after="FilterFolders" />
+
+<p>Here are the available folders:</p>
 
 <ul>
-    @foreach (var dir in Folders)
+    @foreach (var dir in FilteredFolders)
     {
-        <a href="@("videos/"+dir)">@dir</a>
+        <li>
+            <a href="@("videos/"+dir)">@dir</a>
+        </li>
     }
-    
 </ul>
 
-@code{
-
+@code {
     private List<string> Folders { get; set; } = [];
-    
+    private List<string> FilteredFolders { get; set; } = [];
+    private string SearchTerm { get; set; } = string.Empty;
+
     protected override void OnInitialized()
     {
         Folders = DataRepository.GetFolders();
+        FilteredFolders = Folders;
     }
 
+    private void FilterFolders()
+    {
+        FilteredFolders = string.IsNullOrWhiteSpace(SearchTerm)
+            ? Folders
+            : Folders.Where(folder => // searching for folders
+                folder.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) || 
+                folder.Contains(SearchTerm.Replace(' ', '_'),  StringComparison.InvariantCultureIgnoreCase))
+                .ToList();
+    }
 }

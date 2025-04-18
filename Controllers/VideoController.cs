@@ -42,8 +42,8 @@ public class VideoController(DataRepository dataRepository, ApplicationDbContext
     {
         if (time == 0) return Ok();
         var user = await userManager.GetUserAsync(User);
-        var dict = user.StartSeconds == null ? new Dictionary<string, uint>() : JsonSerializer.Deserialize<Dictionary<string, uint>>(user.StartSeconds);
-        dict[folder + "/" + video] = (uint)Math.Floor(time!);
+        var dict = user!.StartSeconds == null ? new Dictionary<string, uint>() : JsonSerializer.Deserialize<Dictionary<string, uint>>(user.StartSeconds);
+        dict![folder + "/" + video] = (uint)Math.Floor(time!);
         user.StartSeconds = JsonSerializer.Serialize(dict);
         await userManager.UpdateAsync(user);
         

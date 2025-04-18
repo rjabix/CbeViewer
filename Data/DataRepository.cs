@@ -5,22 +5,22 @@ namespace CbeViewer.Data;
 
 public class DataRepository(ApplicationDbContext dbContext, IWebHostEnvironment environment)
 {
-    private readonly string DataPath = environment.IsDevelopment() ? 
+    private readonly string _dataPath = environment.IsDevelopment() ? 
         "/home/rjabix/DockerTests/CbeViewer/Videos" 
         : 
         "/env/Videos";
     public List<string?> GetFolders()
-        => Directory.GetDirectories(DataPath)
+        => Directory.GetDirectories(_dataPath)
             .Select(Path.GetFileName)
             .ToList();
     
     public List<string?> GetVideos(string folder)
-    => Directory.GetFiles(DataPath + "/" + folder)
+    => Directory.GetFiles(_dataPath + "/" + folder)
         .Select(Path.GetFileName)
         .ToList();
     
     public string GetVideoPath(string folder, string video)
-        => $"{DataPath}/{folder}/{video}";
+        => $"{_dataPath}/{folder}/{video}";
     
     public async Task<uint> GetInitialSeconds(string folder, string video, string UserName)
     {
