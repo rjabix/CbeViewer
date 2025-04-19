@@ -15,9 +15,14 @@ public class DataRepository(ApplicationDbContext dbContext, IWebHostEnvironment 
             .ToList();
     
     public List<string?> GetVideos(string folder)
-    => Directory.GetFiles(_dataPath + "/" + folder)
+    => Directory.GetFiles(_dataPath + "/" + folder, "*.mp4")
         .Select(Path.GetFileName)
         .ToList();
+    
+    public List<string?> GetSubtitles(string folder, string video)
+    => Directory.GetFiles($"{_dataPath}/{folder}", $"{video.Split('.')[0]}*.vtt")
+            .Select(Path.GetFileName).ToList();
+    
     
     public string GetVideoPath(string folder, string video)
         => $"{_dataPath}/{folder}/{video}";

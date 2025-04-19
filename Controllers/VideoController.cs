@@ -49,4 +49,18 @@ public class VideoController(DataRepository dataRepository, ApplicationDbContext
         
         return Ok();
     }
+    
+    [HttpGet("subtitles/{folder}/{file}")]
+    public ActionResult GetSubtitles(string folder, string file)
+    {
+        var path = dataRepository.GetVideoPath(folder, file);
+        if (!System.IO.File.Exists(path))
+        {
+            return NotFound();
+        }
+
+        var subtitleStream = System.IO.File.OpenRead(path);
+        
+        return File(subtitleStream, "text/vtt");
+    }
 }

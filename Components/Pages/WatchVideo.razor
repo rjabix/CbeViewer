@@ -1,4 +1,5 @@
 @page "/watch/{Folder}/{File}"
+@using System.Globalization
 @using CbeViewer.Data
 @using Microsoft.AspNetCore.Authorization
 
@@ -9,11 +10,16 @@
 
 @attribute [Authorize]
 @attribute [AllowAnonymous]
-<h3>Watch Video</h3>
+<h3>@File</h3>
 
 <video id="video-player" controls style="width: 100%; max-height: 800px; background-color: black;" data-folder="@Folder" data-file="@File">
     <source src="/api/video/stream/@Folder/@File" type="video/mp4" />
     Ваш браузер не підтримує відтворення відео.
+    
+    @foreach (var track in subtitlesTracks) // adding available subtitles
+    {
+        <track label="@track.Label" kind="subtitles" srclang="@track.Language" src="/api/video/subtitles/@track.Src"/>
+    }
 </video>
 
 @code {
@@ -24,22 +30,46 @@
     public string File { get; set; }
 
     private string UserName { get; set; }
+    
+    private List<SubtitleTrack> subtitlesTracks = [];
+    
+    protected override async Task OnInitializedAsync()
+    {
+        var subtitlesFiles =  DataRepository.GetSubtitles(Folder, File);
+        // e.g. "video-en.vtt", "video-uk.vtt"
+
+        subtitlesTracks = subtitlesFiles.Select(file =>
+        {
+            var langCode = file!.Split('-')[1].Split('.')[0]; // "en"
+            var label = CultureInfo.GetCultureInfo(langCode).NativeName; // "English"
+            return new SubtitleTrack
+            {
+                Label = label,
+                Language = langCode,
+                Src = $"{Folder}/{file}",
+                IsDefault = langCode == "en"
+            };
+        }).ToList();
+        await base.OnInitializedAsync();
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-            bool auth = authState.User.Identity.IsAuthenticated;
+            bool auth = authState.User.Identity!.IsAuthenticated;
             if (auth)
             {
-                var initialSeconds = await DataRepository.GetInitialSeconds(Folder, File, authState.User.Identity.Name);
+                var initialSeconds = await DataRepository.GetInitialSeconds(Folder, File, authState.User.Identity.Name!);
                 var dotNetReference = DotNetObjectReference.Create(this);
-                await JSRuntime.InvokeVoidAsync("InitPage", initialSeconds, dotNetReference); // fetching the video initial seconds
-                UserName = authState.User.Identity.Name;
+                await JSRuntime.InvokeVoidAsync("InitPage", initialSeconds, dotNetReference); // setting the video initial seconds
+                UserName = authState.User.Identity.Name!;
                 StateHasChanged();
             }
         }
+
+        await JSRuntime.InvokeVoidAsync("console.log", DataRepository.GetSubtitles(Folder, File));
         await base.OnAfterRenderAsync(firstRender);
     }
     
@@ -48,6 +78,14 @@
     {
         await DataRepository.SetInitialSeconds(Folder, File, currentTime, UserName);
     }
+    
+    private class SubtitleTrack
+    {
+        public string Label { get; set; }
+        public string Language { get; set; }
+        public string Src { get; set; }
+        public bool IsDefault { get; set; }
+    }
 }
 
 <script>
@@ -55,19 +93,6 @@
         // assuming that we are already authenticated
         const video = document.getElementById('video-player');
         video.currentTime = initSeconds;
-        const url = `/api/video/initial-seconds/${video.dataset.folder}/${video.dataset.file}`;
-    /*  let initsec = 0;
-        console.log("Fetching initial seconds from server...");
-        fetch(url, { headers: { 'Content-Type': 'application/json' } })
-            .then(response => response.text())
-            .then(res => {
-                if (parseInt(res) > 0) {
-                    video.currentTime = parseInt(res);
-                }
-                initsec = parseInt(res);
-            })
-            .catch(e => console.error(e));
-    */
         let timesChanged = 0;
         video.addEventListener("timeupdate", function (e) {
             if (timesChanged < 3 * 40) { // to do one request per +-20 (real 17) seconds
@@ -76,10 +101,6 @@
             }
             timesChanged = 0;
             console.log("Sending time to server...");
-            /*fetch(`${url}?time=${video.currentTime}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            }).catch(e => console.error(e)); */
             dotNetReference.invokeMethodAsync('OnTimeUpdate', video.currentTime);
         });
     }
